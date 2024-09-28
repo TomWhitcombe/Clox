@@ -1,0 +1,7 @@
+﻿  Arena.c
+  CLox.c
+  Chunk.c
+  dArray.c
+  debug.c
+  Generating Code...
+  CLox.vcxproj -> C:\Code\C\CLox\x64\Debug\CLox.exe
