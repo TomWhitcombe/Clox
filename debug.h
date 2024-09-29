@@ -3,5 +3,5 @@
 
 FORWARD_DEC(chunk_t);
 
-void disassembleChunk(chunk_t* chunk, const char* name);
-int32_t disassembleInstruction(chunk_t* chunk, int32_t offset);
+void disassembleChunk(const chunk_t* chunk, const char* name);
+int32_t disassembleInstruction(const chunk_t* chunk, const int32_t offset);

@@ -132,6 +132,7 @@
     <ClCompile Include="CLox.c" />
     <ClCompile Include="dArray.c" />
     <ClCompile Include="debug.c" />
+    <ClCompile Include="VM.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Arena.h" />
@@ -139,6 +140,7 @@
     <ClInclude Include="common.h" />
     <ClInclude Include="dArray.h" />
     <ClInclude Include="debug.h" />
+    <ClInclude Include="VM.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

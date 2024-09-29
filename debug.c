@@ -8,7 +8,7 @@ NO_LINK int simpleInstruction(const char* name, int offset)
     return offset + 1;
 }
 
-NO_LINK int constantInstruction(const char* name, chunk_t* chunk,
+NO_LINK int constantInstruction(const char* name,const chunk_t* chunk,
     int offset, bool isLong) {
     uint32_t constantIndex = 0;
     uint32_t sizeOffset = 0;
@@ -31,7 +31,7 @@ NO_LINK int constantInstruction(const char* name, chunk_t* chunk,
 }
 
 static int32_t s_lastLine = 0;
-void disassembleChunk(chunk_t* chunk, const char* name) {
+void disassembleChunk(const chunk_t* chunk, const char* name) {
     printf("== %s ==\n", name);
     s_lastLine = 0;
     for (int offset = 0; offset < chunk->code.count;) 
@@ -41,7 +41,7 @@ void disassembleChunk(chunk_t* chunk, const char* name) {
     }
 }
 
-int32_t disassembleInstruction(chunk_t* chunk, int offset) {
+int32_t disassembleInstruction(const chunk_t* chunk, const int32_t offset) {
     printf("%04d ", offset);
     assert(offset < chunk->code.count);
 

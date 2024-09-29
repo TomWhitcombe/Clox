@@ -1,12 +1,12 @@
 #include "chunk.h"
 
 DARRAY_IMPL(uint8_t, code_t);
-DARRAY_IMPL(value_t, values_t);
+DARRAY_IMPL(value_t, valuesArray_t);
 DARRAY_IMPL(lineInfo_t, lines_t);
 
 void initChunk(chunk_t* chunk) {
     code_t_init(&chunk->code);
-    values_t_init(&chunk->constants);
+    valuesArray_t_init(&chunk->constants);
     lines_t_init(&chunk->lines);
 }
 
@@ -24,9 +24,9 @@ void writeChunk(chunk_t* chunk, const uint8_t byte, const int32_t lineNumber) {
     lines_t_push(&chunk->lines, (lineInfo_t) { lineNumber, 1 });
 }
 
-NO_LINK int32_t addConstant(values_t* constantArray, value_t value)
+NO_LINK int32_t addConstant(valuesArray_t* constantArray, value_t value)
 {
-    assert(values_t_push(constantArray, value));
+    assert(valuesArray_t_push(constantArray, value));
     return constantArray->count - 1;
 }
 
@@ -52,7 +52,7 @@ void writeConstant(chunk_t* chunk, const value_t constant, const int32_t lineNum
     }
 }
 
-uint32_t getLongConstantIndex(chunk_t* chunk, int32_t offset)
+uint32_t getLongConstantIndex(const chunk_t* chunk, const int32_t offset)
 {
     uint8_t little  = chunk->code.data[offset];
     uint8_t mid     = chunk->code.data[offset + 1];
@@ -61,7 +61,7 @@ uint32_t getLongConstantIndex(chunk_t* chunk, int32_t offset)
     return little | (mid << 8) | (top << 16);
 }
 
-int32_t getLineNumberAtOffset(chunk_t* chunk, int32_t offset)
+int32_t getLineNumberAtOffset(const chunk_t* chunk, const int32_t offset)
 {
     assert(offset < chunk->code.count);
 
