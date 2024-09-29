@@ -128,7 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Arena.c" />
-    <ClCompile Include="Chunk.c" />
+    <ClCompile Include="chunk.c" />
     <ClCompile Include="CLox.c" />
     <ClCompile Include="dArray.c" />
     <ClCompile Include="debug.c" />

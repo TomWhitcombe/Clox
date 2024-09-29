@@ -21,9 +21,6 @@
     <ClCompile Include="Arena.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Chunk.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="dArray.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -31,6 +28,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VM.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="chunk.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
