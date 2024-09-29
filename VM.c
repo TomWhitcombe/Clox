@@ -30,6 +30,12 @@ NO_LINK interpretResult_e run()
 #define POP_BYTE() (*g_vm.instruction_ptr++)
 #define POP_CONSTANT() (g_vm.chunk->constants.data[POP_BYTE()])
 #define POP_LONG_CONSTANT() (g_vm.chunk->constants.data[POP_BYTE() | POP_BYTE() << 8 | POP_BYTE() << 16])
+#define BINARY_OP(op) \
+	do { \
+      double b = popStack(); \
+      double a = popStack(); \
+      pushStack(a op b); \
+    } while (false)
 
 	while (true)
 	{
@@ -52,24 +58,40 @@ NO_LINK interpretResult_e run()
 		uint8_t instruction;
 		switch (instruction = POP_BYTE())
 		{
-		case OP_RETURN:
-			printf("%g", popStack());
-			printf("\n");
-			return INTERPRET_OK;
-		case OP_CONSTANT: 
+			case OP_RETURN:
+			{
+				printf("%g", popStack());
+				printf("\n");
+				return INTERPRET_OK;
+			}
+			case OP_CONSTANT: 
 			{
 				value_t constant = POP_CONSTANT();
 				pushStack(constant);
 				break;
 			}
-		case OP_CONSTANT_LONG: 
+			case OP_CONSTANT_LONG: 
 			{
 				value_t constant = POP_LONG_CONSTANT();
 				pushStack(constant);
 				break;
 			}
+			case OP_ADD:      BINARY_OP(+); break;
+			case OP_SUBTRACT: BINARY_OP(-); break;
+			case OP_MULTIPLY: BINARY_OP(*); break;
+			case OP_DIVIDE:   BINARY_OP(/); break;
+
+			case OP_NEGATE:
+			{
+				// Not sure which I prefer. Is 1 ptr op worth the muddy code?
+				value_t* topVal = (g_vm.stackTop - 1);
+				*topVal = -(*topVal);
+				//pushStack(-popStack())
+				break;
+			}
 		}
 	}
+#undef BINARY_OP
 #undef POP_BYTE
 #undef POP_CONSTANT
 #undef POP_LONG_CONSTANT
