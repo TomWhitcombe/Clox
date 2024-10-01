@@ -130,16 +130,23 @@
     <ClCompile Include="Arena.c" />
     <ClCompile Include="chunk.c" />
     <ClCompile Include="CLox.c" />
+    <ClCompile Include="compiler.c" />
     <ClCompile Include="dArray.c" />
     <ClCompile Include="debug.c" />
+    <ClCompile Include="scanner.c" />
+    <ClCompile Include="trie.c" />
     <ClCompile Include="VM.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Arena.h" />
     <ClInclude Include="chunk.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="compiler.h" />
     <ClInclude Include="dArray.h" />
     <ClInclude Include="debug.h" />
+    <ClInclude Include="scanner.h" />
+    <ClInclude Include="tokenTypes.h" />
+    <ClInclude Include="trie.h" />
     <ClInclude Include="VM.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

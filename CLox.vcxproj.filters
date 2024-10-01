@@ -33,6 +33,15 @@
     <ClCompile Include="chunk.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="compiler.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scanner.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="trie.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h">
@@ -51,6 +60,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VM.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="scanner.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="trie.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tokenTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

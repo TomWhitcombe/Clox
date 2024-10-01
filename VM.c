@@ -102,12 +102,12 @@ void initVM()
 	resetStack();
 }
 
-interpretResult_e vm_interpret(const chunk_t* chunk)
+interpretResult_e vm_interpret(const char* source)
 {
-	g_vm.chunk = chunk;
-	g_vm.instruction_ptr = chunk->code.data;
-
-	return run();
+	//g_vm.chunk = chunk;
+	//g_vm.instruction_ptr = chunk->code.data;
+	compile(source);
+	return INTERPRET_OK;
 }
 
 void freeVM() 
