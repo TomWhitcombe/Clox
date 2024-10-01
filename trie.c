@@ -54,6 +54,7 @@ NO_LINK trie_node_t* findNode(char* word, int32_t charIndex)
 			if (child->value == word[searchIndex])
 			{
 				node = child + child->nodeOffset;
+				break;
 			}
 		}
 		searchIndex++;
@@ -127,10 +128,8 @@ void build_trie()
 	}
 }
 
-
-/*
-[HEAD] 0
-[c1][c2][c3]
-[CH1]
-
-*/
+tokenType_e trie_getToken(const char* lexemeStart, const int32_t length)
+{
+	trie_node_t* node = findNode(lexemeStart, length);
+	return node->tokenValue;
+}

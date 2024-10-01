@@ -61,9 +61,11 @@ int main(const char** argv, int argc)
 
     init_trie();
     addKeyword("const", TOKEN_AND);
-    addKeyword("comma", TOKEN_BANG);
+    addKeyword("comma", TOKEN_BANG);//BUG - const can't be found if comma exists
     build_trie();
 
+    const char* string = "a const thing";
+    tokenType_e token = trie_getToken(&string[2], 5);
 
 
 	initVM();
