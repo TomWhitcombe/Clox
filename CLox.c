@@ -65,8 +65,7 @@ int main(const char** argv, int argc)
     build_trie();
 
     const char* string = "a const thing";
-    tokenType_e token = trie_getToken(&string[2], 5);
-
+    tokenType_e token = getTokenType(&string[2], 5);
 
 	initVM();
     if (argc == 1) {

@@ -3,21 +3,53 @@
 #include "arena.h"
 #include <string.h>
 
-typedef struct trie_child
-{
-	char value;
-	uint8_t nodeOffset; // uint16 offset from child position
-}trie_child_t;
+#define MAX_KEYWORDS_PER_NODE 59
 
-typedef struct trie_node
+enum nodeType_e
 {
-	uint8_t tokenValue; // TOKEN_indentifier == none end
+	NODE_MAIN,
+	NODE_CHILD
+};
+
+typedef struct nodeBig
+{
+	uint8_t nodeType;
+	uint8_t keywordIdxs[MAX_KEYWORDS_PER_NODE];
+	uint8_t numKeywords;
+	uint8_t depth;
+
+	uint8_t tokenValue;
 	uint8_t numChildren;
-}trie_node_t;
+}nodeBig_t;
+
+typedef struct childReferenceBig
+{
+	uint8_t nodeType;
+	nodeBig_t* parent;
+	uint8_t offsetToNode;
+	char value;
+	uint8_t padding[45];
+}childReferenceBig_t;
+
+typedef struct node
+{
+	uint8_t tokenValue;
+	uint8_t numChildren;
+} node_t;
+
+typedef struct childReference
+{
+	uint8_t offsetToNode;
+	char value;
+} childReference_t;
+
+static_assert(sizeof(nodeBig_t) == sizeof(childReferenceBig_t), "Must match size for ezier ptr math");
+static_assert(sizeof(node_t) == sizeof(childReference_t), "Must match size for ezier ptr math");
 
 typedef struct trie
 {
-	trie_node_t* head;
+	node_t* searchHead;
+	nodeBig_t* bigHead;
 	linearAllocator_t* arena;
 
 	int32_t numKeywords;
@@ -29,9 +61,10 @@ keywordTrie_t g_keywords;
 
 void init_trie() 
 {
-	g_keywords.arena = linear_allocator_create(MB);
 	g_keywords.numKeywords = 0;
-	g_keywords.head = linear_allocator_push(g_keywords.arena, sizeof(trie_node_t));
+
+	g_keywords.arena = linear_allocator_create(MB);
+	g_keywords.bigHead = linear_allocator_push(g_keywords.arena, sizeof(nodeBig_t));
 }
 
 void addKeyword(const char* keyword, tokenType_e associatedToken)
@@ -42,94 +75,169 @@ void addKeyword(const char* keyword, tokenType_e associatedToken)
 	g_keywords.numKeywords++;
 }
 
-NO_LINK trie_node_t* findNode(char* word, int32_t charIndex)
+tokenType_e getTokenType(const char* lexemeStart, const int32_t length)
 {
-	trie_node_t* node = g_keywords.head;
-	int32_t searchIndex = 0;
-	while (searchIndex < charIndex)
+	node_t* next = g_keywords.searchHead;
+	uint8_t depth = 0;
+	FOR(depth, length)
 	{
-		FOR(childIndex, node->numChildren)
+		bool match = false;
+		FOR(c, next->numChildren)
 		{
-			trie_child_t* child = node + childIndex + 1; //unify
-			if (child->value == word[searchIndex])
+			childReference_t* child = next + c + 1;
+
+			if (child->value == lexemeStart[depth])
 			{
-				node = child + child->nodeOffset;
+				next = child + child->offsetToNode;
+				match = true;
 				break;
 			}
 		}
-		searchIndex++;
+
+		if (!match)
+		{
+			break;
+		}
 	}
 
-	return node;
+	return next->tokenValue;
 }
 
 void build_trie()
 {
-	// prepass to find longest keyword
-	size_t longestKeyword = 0;
-	FOR(kwIdx, g_keywords.numKeywords)
+	linearAllocator_t* alloc = g_keywords.arena;
+	const char** keywords = g_keywords.keywords;
+	const tokenType_e* tokens = g_keywords.tokens;
+	const int32_t numKeywords = g_keywords.numKeywords;
+
+	nodeBig_t* bigHead = g_keywords.bigHead;
+
+	bigHead->nodeType = NODE_MAIN;
+
+	FOR(k, numKeywords)
 	{
-		const char* keyword = g_keywords.keywords[kwIdx];
-		size_t l = strlen(keyword);
-		if (l > longestKeyword)
-		{
-			longestKeyword = l;
-		}
+		bigHead->keywordIdxs[bigHead->numKeywords++] = k;
 	}
 
-	FOR(charIndex, longestKeyword)
+	nodeBig_t* n = bigHead;
+	childReferenceBig_t* pendingChildrenStack[64];
+	uint8_t childrenStackCount = 0;
+
+	while (n)
 	{
-		trie_child_t* addedChildren[32];
-		tokenType_e tokenType[32];
-		uint32_t numAddedChildren = 0;
-
-		FOR(kwIdx, g_keywords.numKeywords)
+		//find unique character offspring
+		char uniqueOffspring[MAX_KEYWORDS_PER_NODE];
+		uint8_t numUniqueOffspring = 0;
+		FOR(k, n->numKeywords)
 		{
-			const char* keyword = g_keywords.keywords[kwIdx];
-			size_t length = strlen(keyword);
-
-			//TODO: If at length should be add a token
-			if (length <= charIndex)
+			const char* keyword = keywords[n->keywordIdxs[k]];
+			n->tokenValue = TOKEN_IDENTIFIER;
+			if (strlen(keyword) > n->depth)
 			{
-				continue;
-			}
-
-			trie_node_t* node = charIndex == 0 ? g_keywords.head : findNode(keyword, charIndex);
-			bool shouldAdd = true;
-			FOR(childIndex, node->numChildren)
-			{
-				static_assert(sizeof(trie_child_t) == sizeof(trie_node_t), "Bugger");
-				trie_child_t* child = node + childIndex + 1;
-				if (child->value == keyword[charIndex])
+				char nextChar = keyword[n->depth];
+				bool shouldAddNewUnique = true;
+				FOR(u, numUniqueOffspring)
 				{
-					shouldAdd = false;
-					break;
+					char uniqueChar = uniqueOffspring[u];
+					if (uniqueChar == nextChar)
+					{
+						shouldAddNewUnique = false;
+						break;
+					}
+				}
+
+				if (shouldAddNewUnique)
+				{
+					uniqueOffspring[numUniqueOffspring++] = nextChar;
+				}
+			}
+			else
+			{
+				printf("End of node chain for %s", keyword);
+				//TODO: Really should assert only one token
+				n->tokenValue = tokens[n->keywordIdxs[k]];
+			}
+		}
+
+		childReferenceBig_t* nextChild = NULL;
+		FOR(uc, numUniqueOffspring)
+		{
+			childReferenceBig_t* child = linear_allocator_push(alloc, sizeof(childReferenceBig_t));
+			child->parent = n;
+			child->value = uniqueOffspring[uc];
+			child->nodeType = NODE_CHILD;
+			if (nextChild == NULL)
+			{
+				nextChild = child;
+			}
+			else
+			{
+				pendingChildrenStack[childrenStackCount++] = child;
+			}
+			n->numChildren++;
+		}
+
+		if (nextChild == NULL && childrenStackCount > 0)
+		{
+			childrenStackCount--;
+			nextChild = pendingChildrenStack[childrenStackCount];
+		}
+
+		if (nextChild)
+		{
+			n = linear_allocator_push(alloc, sizeof(nodeBig_t));
+			n->nodeType = NODE_MAIN;
+
+			nodeBig_t* parent = nextChild->parent;
+
+			FOR(pk, parent->numKeywords)
+			{
+				const char* keyword = keywords[parent->keywordIdxs[pk]];
+				if (keyword[parent->depth] == nextChild->value)
+				{
+					n->keywordIdxs[n->numKeywords++] = parent->keywordIdxs[pk];//TODO; assert don't have more than max per node
 				}
 			}
 
-			if (shouldAdd)
-			{
-				trie_child_t* child = linear_allocator_push(g_keywords.arena, sizeof(trie_child_t));
-				child->value = keyword[charIndex];
-				child->nodeOffset = 0;//TODO: Figure when to allocate node
-				node->numChildren++;
-				tokenType[numAddedChildren] = (charIndex == length - 1) ? g_keywords.tokens[kwIdx] : TOKEN_IDENTIFIER;
-				addedChildren[numAddedChildren++] = child;
-			}
-		}
+			n->depth = parent->depth + 1;
 
-		FOR(addedIdx, numAddedChildren)
+			size_t offset = n - (nodeBig_t*)nextChild; // same size- so works;
+			//todo assert offset < 255
+			nextChild->offsetToNode = offset;
+		}
+		else
 		{
-			trie_child_t* child = addedChildren[addedIdx];
-			trie_node_t* newNode = linear_allocator_push(g_keywords.arena, sizeof(trie_node_t));
-			newNode->tokenValue = tokenType[addedIdx];
-			child->nodeOffset = newNode - child;
+			n = NULL;
 		}
 	}
-}
 
-tokenType_e trie_getToken(const char* lexemeStart, const int32_t length)
-{
-	trie_node_t* node = findNode(lexemeStart, length);
-	return node->tokenValue;
+	uint32_t tell = linear_allocator_tell(alloc);
+	uint32_t numNodesAndChildren = tell / sizeof(nodeBig_t);
+
+	FOR(n, numNodesAndChildren)
+	{
+		node_t* node = NULL;
+
+		nodeBig_t* nextBigNode = bigHead + n;
+		if (nextBigNode->nodeType == NODE_MAIN)
+		{
+			node = linear_allocator_push(alloc, sizeof(node_t));
+			node->numChildren = nextBigNode->numChildren;
+			node->tokenValue = nextBigNode->tokenValue;
+		}
+		else
+		{
+			childReferenceBig_t* bigKid = (childReferenceBig_t*)nextBigNode;
+			childReference_t* child = linear_allocator_push(alloc, sizeof(childReference_t));
+			child->value = bigKid->value;
+			child->offsetToNode = bigKid->offsetToNode;
+		}
+
+		if (g_keywords.searchHead == NULL && node)
+		{
+			g_keywords.searchHead = node;
+		}
+	}
+
+	assert(g_keywords.searchHead);
 }
