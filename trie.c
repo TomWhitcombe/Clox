@@ -128,10 +128,11 @@ void build_trie()
 		//find unique character offspring
 		char uniqueOffspring[MAX_KEYWORDS_PER_NODE];
 		uint8_t numUniqueOffspring = 0;
+		n->tokenValue = TOKEN_IDENTIFIER;
 		FOR(k, n->numKeywords)
 		{
 			const char* keyword = keywords[n->keywordIdxs[k]];
-			n->tokenValue = TOKEN_IDENTIFIER;
+			
 			if (strlen(keyword) > n->depth)
 			{
 				char nextChar = keyword[n->depth];
@@ -153,8 +154,8 @@ void build_trie()
 			}
 			else
 			{
+				assert(n->tokenValue == TOKEN_IDENTIFIER);// Can't have mutliple token vals per endnode
 				printf("End of node chain for %s", keyword);
-				//TODO: Really should assert only one token
 				n->tokenValue = tokens[n->keywordIdxs[k]];
 			}
 		}
@@ -195,14 +196,15 @@ void build_trie()
 				const char* keyword = keywords[parent->keywordIdxs[pk]];
 				if (keyword[parent->depth] == nextChild->value)
 				{
-					n->keywordIdxs[n->numKeywords++] = parent->keywordIdxs[pk];//TODO; assert don't have more than max per node
+					n->keywordIdxs[n->numKeywords++] = parent->keywordIdxs[pk];
+					assert(n->numKeywords <= MAX_KEYWORDS_PER_NODE);
 				}
 			}
 
 			n->depth = parent->depth + 1;
 
 			size_t offset = n - (nodeBig_t*)nextChild; // same size- so works;
-			//todo assert offset < 255
+			assert(offset <= 0xFF);
 			nextChild->offsetToNode = offset;
 		}
 		else
